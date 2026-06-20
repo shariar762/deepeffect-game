@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🎮 DeepEffect Game — Discipline RPG</title>
+<style>
+  :root{
+    --bg:#0a0e1a; --bg2:#121829; --card:#171f33; --card2:#1d2740;
+    --line:#27324f; --text:#e8edf7; --muted:#8a97b8;
+    --gold:#ffcf5c; --green:#39d98a; --red:#ff5c7a; --blue:#5ca8ff;
+    --purple:#9b6cff; --flame:#ff8a3d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%,#16203a 0%,var(--bg) 60%);
+    color:var(--text);min-height:100vh;padding:16px;padding-bottom:48px;
+  }
+  .wrap{max-width:560px;margin:0 auto}
+  h1{font-size:1.35rem;text-align:center;letter-spacing:.5px}
+  .sub{text-align:center;color:var(--muted);font-size:.8rem;margin-top:2px;margin-bottom:16px}
+
+  /* HUD */
+  .hud{background:linear-gradient(135deg,var(--card2),var(--card));border:1px solid var(--line);
+    border-radius:18px;padding:16px;margin-bottom:16px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+  .hud-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .rank{font-size:.95rem;font-weight:700}
+  .rank small{display:block;color:var(--muted);font-weight:500;font-size:.72rem}
+  .combo{text-align:right}
+  .combo .num{font-size:1.6rem;font-weight:800;color:var(--flame);line-height:1}
+  .combo small{color:var(--muted);font-size:.7rem}
+  .bar{height:12px;background:#0c1120;border-radius:8px;margin-top:14px;overflow:hidden;border:1px solid var(--line)}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));width:0;transition:width .4s ease}
+  .barlabel{display:flex;justify-content:space-between;font-size:.74rem;color:var(--muted);margin-top:6px}
+  .xpbig{font-size:.82rem}
+  .xpbig b{color:var(--gold);font-size:1rem}
+  .mult{display:inline-block;background:rgba(255,138,61,.15);color:var(--flame);
+    border:1px solid rgba(255,138,61,.4);padding:1px 8px;border-radius:20px;font-size:.72rem;font-weight:700;margin-left:6px}
+
+  /* sections */
+  .section{margin-bottom:18px}
+  .section h2{font-size:.82rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin:0 4px 10px}
+
+  .quest{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:.15s;user-select:none}
+  .quest:active{transform:scale(.99)}
+  .quest.done{background:linear-gradient(135deg,rgba(57,217,138,.14),var(--card));border-color:rgba(57,217,138,.45)}
+  .check{width:24px;height:24px;border-radius:7px;border:2px solid var(--line);flex:none;
+    display:flex;align-items:center;justify-content:center;font-size:14px;color:transparent;transition:.15s}
+  .quest.done .check{background:var(--green);border-color:var(--green);color:#06210f}
+  .qtext{flex:1}
+  .qtext .t{font-size:.92rem;font-weight:600}
+  .qtext .d{font-size:.74rem;color:var(--muted)}
+  .xp{font-size:.8rem;font-weight:800;color:var(--gold);flex:none}
+
+  /* bosses */
+  .boss{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:.15s;user-select:none;position:relative;overflow:hidden}
+  .boss:active{transform:scale(.99)}
+  .boss .emo{font-size:1.5rem;flex:none;filter:grayscale(0)}
+  .boss.killed{background:linear-gradient(135deg,rgba(57,217,138,.16),var(--card));border-color:rgba(57,217,138,.5)}
+  .boss.killed .emo{filter:grayscale(1) brightness(.7)}
+  .boss .bt{flex:1}
+  .boss .bt .n{font-size:.92rem;font-weight:700}
+  .boss .bt .h{font-size:.73rem;color:var(--muted)}
+  .status{font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:20px;flex:none}
+  .alive{background:rgba(255,92,122,.16);color:var(--red);border:1px solid rgba(255,92,122,.4)}
+  .dead{background:rgba(57,217,138,.16);color:var(--green);border:1px solid rgba(57,217,138,.4)}
+
+  /* end day */
+  .endbtn{width:100%;padding:16px;border:none;border-radius:16px;font-size:1.02rem;font-weight:800;
+    background:linear-gradient(135deg,var(--gold),#ff9f43);color:#241500;cursor:pointer;letter-spacing:.4px;
+    box-shadow:0 8px 24px rgba(255,159,67,.25);transition:.15s}
+  .endbtn:active{transform:scale(.99)}
+  .endbtn.done{background:var(--card2);color:var(--muted);box-shadow:none;cursor:default}
+
+  /* history */
+  .cal{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;background:var(--card);
+    border:1px solid var(--line);border-radius:14px;padding:14px}
+  .dot{aspect-ratio:1;border-radius:6px;background:#0c1120;border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--muted)}
+  .dot.win{background:var(--green);border-color:var(--green);color:#06210f;font-weight:700}
+  .dot.loss{background:rgba(255,92,122,.25);border-color:rgba(255,92,122,.5);color:var(--red)}
+
+  /* levels */
+  .lvl{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);
+    border-radius:12px;margin-bottom:7px;background:var(--card);cursor:pointer;user-select:none}
+  .lvl.got{background:linear-gradient(135deg,rgba(155,108,255,.16),var(--card));border-color:rgba(155,108,255,.5)}
+  .lvl .e{font-size:1.15rem}
+  .lvl .lt{flex:1;font-size:.84rem}
+  .lvl .lt small{display:block;color:var(--muted);font-size:.72rem}
+  .lvl .mark{font-size:.7rem;color:var(--muted)}
+  .lvl.got .mark{color:var(--purple);font-weight:700}
+
+  .stats{display:flex;gap:10px;margin-bottom:16px}
+  .stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+  .stat .v{font-size:1.3rem;font-weight:800}
+  .stat .l{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+  .footer{text-align:center;color:var(--muted);font-size:.72rem;margin-top:24px;line-height:1.6}
+  .footer a{color:var(--blue);text-decoration:none}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);
+    background:var(--card2);border:1px solid var(--line);color:var(--text);padding:14px 20px;border-radius:14px;
+    font-size:.9rem;font-weight:600;box-shadow:0 12px 40px rgba(0,0,0,.5);transition:.4s;z-index:50;text-align:center;max-width:90%}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .reset{background:none;border:1px solid var(--line);color:var(--muted);font-size:.7rem;
+    padding:6px 12px;border-radius:10px;cursor:pointer;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎮 THE DEEPEFFECT GAME</h1>
+  <div class="sub">Discipline RPG · Goal: 👑 $5M Studio Boss</div>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="hud-top">
+      <div class="rank"><span id="rankName">🥚 Rookie</span><small id="rankLvl">Level 1</small></div>
+      <div class="combo"><div class="num" id="comboNum">0🔥</div><small>day combo</small></div>
+    </div>
+    <div class="bar"><i id="xpFill"></i></div>
+    <div class="barlabel">
+      <span class="xpbig">Today: <b id="todayXP">0</b> / 180 XP <span class="mult" id="multTag">x1</span></span>
+      <span id="winTag">Keep going…</span>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="v" id="totalXP">0</div><div class="l">Total XP</div></div>
+    <div class="stat"><div class="v" id="bestCombo">0</div><div class="l">Best Combo</div></div>
+    <div class="stat"><div class="v" id="winDays">0</div><div class="l">Win Days</div></div>
+  </div>
+
+  <!-- BOSSES -->
+  <div class="section">
+    <h2>👹 Boss Fights — kill all 4 to keep combo</h2>
+    <div id="bossList"></div>
+  </div>
+
+  <!-- QUESTS -->
+  <div class="section">
+    <h2>⚔️ Daily Quests</h2>
+    <div id="questList"></div>
+  </div>
+
+  <!-- END DAY -->
+  <div class="section">
+    <button class="endbtn" id="endBtn">🏁 END DAY &amp; SAVE</button>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="section">
+    <h2>📅 Last 30 Days</h2>
+    <div class="cal" id="cal"></div>
+  </div>
+
+  <!-- LEVELS -->
+  <div class="section">
+    <h2>⭐ Business Levels — tap when you hit it</h2>
+    <div id="lvlList"></div>
+  </div>
+
+  <div class="footer">
+    Made for DeepEffect 🚀 · progress saved on this device.<br>
+    <button class="reset" id="resetBtn">Reset today</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- CONFIG ---------- */
+const QUESTS = [
+  {id:'fajr',     t:'🕌 Fajr e utha',           d:'Wake for Fajr — the day-fixer', xp:25},
+  {id:'phone',    t:'📵 Phone-free morning',     d:'No phone first 1 hour',         xp:15},
+  {id:'workout',  t:'💪 Workout',                d:'45 min movement',               xp:20},
+  {id:'sales',    t:'⚔️ Sales block (10 outreach)', d:'First deep-work, no phone',  xp:30},
+  {id:'prayers',  t:'🕌 5 waqt namaz',           d:'All 5 prayers on time',         xp:50},
+  {id:'shutdown', t:'📝 Shutdown ritual',        d:'Plan tomorrow, phone out of room', xp:15},
+  {id:'sleep',    t:'😴 Sleep by 22:30',         d:'Protect tomorrow',              xp:20},
+];
+const BOSSES = [
+  {id:'scroll', emo:'📱', n:'Scroll Monster',         h:'Phone-free morning + under screen limit'},
+  {id:'night',  emo:'🌙', n:'Night Goblin',           h:'Sleep by 22:30'},
+  {id:'procr',  emo:'🐢', n:'Procrastinator Phantom', h:'10 outreach done before noon'},
+  {id:'chaos',  emo:'🌀', n:'Chaos Imp',              h:'3 deep-work blocks, phone away'},
+];
+const LEVELS = [
+  {e:'🥚', n:'Rookie',          c:'Foundation (Phase 0) done'},
+  {e:'🎬', n:'Hustler',         c:'First $2k client signed'},
+  {e:'💼', n:'Closer',          c:'$8k / month'},
+  {e:'🔁', n:'Retainer King',   c:'First $5k/mo retainer'},
+  {e:'👔', n:'Director',        c:'$30k/mo + editor #1 hired'},
+  {e:'🏢', n:'Studio Builder',  c:'$100k/mo + team of 3'},
+  {e:'👑', n:'$5M Studio Boss', c:'$417k/mo run-rate'},
+];
+const WIN_THRESHOLD = 180;
+
+/* ---------- STATE ---------- */
+const KEY='deepeffect_game_v1';
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function blankToday(date){return {date,quests:{},bosses:{},completed:false};}
+let S = load();
+
+function load(){
+  let s;
+  try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){s=null;}
+  if(!s){s={combo:0,bestCombo:0,totalXP:0,winDays:0,levelIdx:0,lastWinDate:null,history:{},today:blankToday(todayStr())};}
+  // new calendar day?
+  if(!s.today || s.today.date!==todayStr()){
+    // auto-finalize an unfinished previous day (counts as completed with whatever was done)
+    if(s.today && !s.today.completed){ finalize(s,true); }
+    s.today=blankToday(todayStr());
+  }
+  return s;
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(S));}
+
+function multiplier(combo){if(combo>=30)return 2;if(combo>=7)return 1.5;if(combo>=3)return 1.2;return 1;}
+
+function dayBaseXP(t){
+  let xp=0;
+  QUESTS.forEach(q=>{if(t.quests[q.id])xp+=q.xp;});
+  BOSSES.forEach(b=>{if(t.bosses[b.id])xp+=10;}); // each boss kill +10
+  return xp;
+}
+function bossesKilled(t){return BOSSES.filter(b=>t.bosses[b.id]).length;}
+function isWin(t){return dayBaseXP(t)>=WIN_THRESHOLD && bossesKilled(t)===4;}
+
+/* finalize a day into history + update combo/level stats */
+function finalize(state,silent){
+  const t=state.today;
+  const base=dayBaseXP(t);
+  const win=isWin(t);
+  const mult=multiplier(state.combo);
+  const earned=Math.round(base*mult);
+  state.totalXP+=earned;
+  if(win){
+    state.combo+=1;
+    state.winDays+=1;
+    state.lastWinDate=t.date;
+    if(state.combo>state.bestCombo)state.bestCombo=state.combo;
+  }else{
+    state.combo=0;
+  }
+  state.history[t.date]={xp:earned,win,bosses:bossesKilled(t)};
+  state.today.completed=true;
+  if(!silent){
+    if(win)toast(`🏆 WIN DAY! +${earned} XP · Combo ${state.combo}🔥`);
+    else toast(`Day saved · +${earned} XP · Combo reset. Tomorrow you win.`);
+  }
+}
+
+/* ---------- RENDER ---------- */
+function render(){
+  const t=S.today;
+  // HUD
+  const lvl=LEVELS[S.levelIdx];
+  document.getElementById('rankName').textContent=lvl.e+' '+lvl.n;
+  document.getElementById('rankLvl').textContent='Level '+(S.levelIdx+1);
+  document.getElementById('comboNum').textContent=S.combo+'🔥';
+  const base=dayBaseXP(t);
+  const mult=multiplier(S.combo);
+  document.getElementById('todayXP').textContent=base;
+  document.getElementById('multTag').textContent='x'+mult;
+  document.getElementById('xpFill').style.width=Math.min(100,(base/WIN_THRESHOLD)*100)+'%';
+  document.getElementById('totalXP').textContent=S.totalXP;
+  document.getElementById('bestCombo').textContent=S.bestCombo;
+  document.getElementById('winDays').textContent=S.winDays;
+  const winTag=document.getElementById('winTag');
+  if(isWin(t)){winTag.textContent='✅ WIN DAY ready!';winTag.style.color='var(--green)';}
+  else{winTag.textContent=(WIN_THRESHOLD-base>0?(WIN_THRESHOLD-base)+' XP + ':'')+(4-bossesKilled(t))+' boss left';winTag.style.color='var(--muted)';}
+
+  // bosses
+  document.getElementById('bossList').innerHTML=BOSSES.map(b=>{
+    const k=t.bosses[b.id];
+    return `<div class="boss ${k?'killed':''}" data-boss="${b.id}">
+      <div class="emo">${b.emo}</div>
+      <div class="bt"><div class="n">${b.n}</div><div class="h">${b.h}</div></div>
+      <div class="status ${k?'dead':'alive'}">${k?'☠ DEFEATED':'⚠ ALIVE'}</div>
+    </div>`;}).join('');
+
+  // quests
+  document.getElementById('questList').innerHTML=QUESTS.map(q=>{
+    const d=t.quests[q.id];
+    return `<div class="quest ${d?'done':''}" data-quest="${q.id}">
+      <div class="check">✓</div>
+      <div class="qtext"><div class="t">${q.t}</div><div class="d">${q.d}</div></div>
+      <div class="xp">+${q.xp}</div>
+    </div>`;}).join('');
+
+  // end button
+  const eb=document.getElementById('endBtn');
+  if(t.completed){eb.classList.add('done');eb.textContent='✅ Day saved — come back tomorrow';}
+  else{eb.classList.remove('done');eb.textContent='🏁 END DAY & SAVE';}
+
+  // calendar (last 30 days)
+  const cells=[];
+  for(let i=29;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const h=S.history[ds];
+    const cls=h?(h.win?'win':'loss'):'';
+    const lbl=h?(h.win?'★':'·'):'';
+    cells.push(`<div class="dot ${cls}" title="${ds}">${lbl||d.getDate()}</div>`);
+  }
+  document.getElementById('cal').innerHTML=cells.join('');
+
+  // levels
+  document.getElementById('lvlList').innerHTML=LEVELS.map((l,i)=>{
+    const got=i<=S.levelIdx;
+    return `<div class="lvl ${got?'got':''}" data-lvl="${i}">
+      <div class="e">${l.e}</div>
+      <div class="lt">${l.n}<small>${l.c}</small></div>
+      <div class="mark">${got?'✓ reached':'tap to reach'}</div>
+    </div>`;}).join('');
+}
+
+/* ---------- EVENTS ---------- */
+document.body.addEventListener('click',e=>{
+  const q=e.target.closest('[data-quest]');
+  const b=e.target.closest('[data-boss]');
+  const l=e.target.closest('[data-lvl]');
+  if(S.today.completed && (q||b)){toast('Day already saved. See you tomorrow 🌙');return;}
+  if(q){const id=q.dataset.quest;S.today.quests[id]=!S.today.quests[id];save();render();}
+  if(b){const id=b.dataset.boss;S.today.bosses[id]=!S.today.bosses[id];save();render();}
+  if(l){const i=+l.dataset.lvl;
+    if(i===S.levelIdx+1){S.levelIdx=i;save();render();toast('⭐ LEVEL UP! '+LEVELS[i].e+' '+LEVELS[i].n);}
+    else if(i<=S.levelIdx){if(confirm('Go back to this level?')){S.levelIdx=i;save();render();}}
+    else{toast('Reach the level before this one first 🔒');}
+  }
+});
+document.getElementById('endBtn').addEventListener('click',()=>{
+  if(S.today.completed)return;
+  finalize(S,false);save();render();
+});
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  if(confirm('Reset today\'s checks? (does not affect history)')){
+    S.today=blankToday(todayStr());save();render();
+  }
+});
+
+/* ---------- TOAST ---------- */
+let tT;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
+  clearTimeout(tT);tT=setTimeout(()=>el.classList.remove('show'),2600);}
+
+render();
+</script>
+</body>
+</html>
