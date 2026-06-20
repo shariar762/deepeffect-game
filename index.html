@@ -335,10 +335,16 @@ const WIN_XP=180, STAT_PER_LVL=300, RING=2*Math.PI*15.5;
 /* ================= STATE ================= */
 const KEY='life_rpg_v2';
 const pad=n=>String(n).padStart(2,'0');
-function dstr(d){d=d||new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
-function wkid(){const d=new Date(),o=new Date(d.getFullYear(),0,1);return d.getFullYear()+'-W'+Math.ceil((((d-o)/864e5)+o.getDay()+1)/7);}
-function nowMin(){const d=new Date();return d.getHours()*60+d.getMinutes();}
-function dayIdx(){const d=new Date();return Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);}
+// --- everything runs on Bangladesh time (Asia/Dhaka), regardless of device timezone ---
+function bdParts(){
+  const f=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Dhaka',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+  const o={}; for(const p of f.formatToParts(new Date())) if(p.type!=='literal') o[p.type]=p.value; return o;
+}
+function bdToday(){const p=bdParts();return new Date(+p.year,+p.month-1,+p.day);}
+function nowMin(){const p=bdParts();let h=+p.hour; if(h>=24)h-=24; return h*60+(+p.minute);}
+function dstr(d){d=d||bdToday();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function wkid(){const d=bdToday(),o=new Date(d.getFullYear(),0,1);return d.getFullYear()+'-W'+Math.ceil((((d-o)/864e5)+o.getDay()+1)/7);}
+function dayIdx(){const d=bdToday();return Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);}
 function freshDay(date){return {date,q:{},skill:null,smoke:0,done:false};}
 
 let S=load();
@@ -404,7 +410,7 @@ function render(){
     <div class="n">${b.n}</div><div class="s">${d?'☠ DEAD':'⚠ ALIVE'}</div></div>`;}).join('');
   $('bossCount').textContent=deadCount(t)+' / 4 defeated';
 
-  const nm=nowMin();$('nowClock').textContent=pad(Math.floor(nm/60))+':'+pad(nm%60);
+  const nm=nowMin();$('nowClock').textContent=pad(Math.floor(nm/60))+':'+pad(nm%60)+' BD';
   let cur=-1;for(let i=0;i<TL.length;i++){const nx=TL[i+1];if(nm>=TL[i].m&&(!nx||nm<nx.m)){cur=i;break;}}
   $('timeline').innerHTML=TL.map((b,i)=>{const d=t.q[b.id];
     const cls=(d?'done ':'')+(i===cur?'now ':'')+(cur>-1&&i<cur&&!d?'past':'');
@@ -423,7 +429,7 @@ function render(){
   $('dragHp').textContent='strength '+S.smokeTarget+' — lower target to shrink it';
   const dE=$('dragEmo');cig<=S.smokeTarget?dE.classList.add('weak'):dE.classList.remove('weak');
   $('dragState').innerHTML=cig<=S.smokeTarget?'<span style="color:var(--green)">🟢 under target</span>':'<span style="color:var(--red)">🔴 over target</span>';
-  let sum=0,n=0;for(let i=1;i<=7;i++){const dd=new Date();dd.setDate(dd.getDate()-i);const h=S.hist[dstr(dd)];if(h){sum+=h.smoke||0;n++;}}
+  let sum=0,n=0;for(let i=1;i<=7;i++){const dd=bdToday();dd.setDate(dd.getDate()-i);const h=S.hist[dstr(dd)];if(h){sum+=h.smoke||0;n++;}}
   $('smoke7').textContent='7-day avg: '+(n?(sum/n).toFixed(1):'—');
 
   $('weekTag').textContent=S.week.id;
@@ -434,7 +440,7 @@ function render(){
   const e=$('endBtn');if(t.done){e.classList.add('done');e.textContent='✅ Day saved — back tomorrow';}
   else{e.classList.remove('done');e.textContent='🏁 END DAY & SAVE';}
 
-  let c='';for(let i=29;i>=0;i--){const dd=new Date();dd.setDate(dd.getDate()-i);const h=S.hist[dstr(dd)];
+  let c='';for(let i=29;i>=0;i--){const dd=bdToday();dd.setDate(dd.getDate()-i);const h=S.hist[dstr(dd)];
     c+=`<div class="dot ${h?(h.win?'win':'loss'):''}" title="${dstr(dd)}">${h?(h.win?'★':'·'):dd.getDate()}</div>`;}
   $('cal').innerHTML=c;
 
