@@ -187,6 +187,11 @@
   .dcell.rest{background:rgba(92,168,255,.25);border-color:rgba(92,168,255,.5);color:var(--blue)}
   .dcell.today{box-shadow:0 0 0 2px var(--gold)}
   .ndot{position:absolute;bottom:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--gold)}
+  .dcell.off:not(.win):not(.loss):not(.rest){background:rgba(255,206,106,.07);color:var(--gold)}
+  .hrs{display:flex;align-items:center;gap:10px;font-size:.8rem;color:var(--muted);font-weight:700}
+  .hrs>span:first-child{margin-right:auto}
+  .cb.sm{width:36px;height:36px;font-size:1.25rem;border-radius:10px}
+  #hrNum{font-size:1.1rem;font-weight:800;color:var(--text);min-width:42px;text-align:center}
   .note,.modal-card textarea{width:100%;min-height:88px;background:rgba(0,0,0,.3);border:1px solid var(--line2);color:var(--text);
     font-family:inherit;font-size:.85rem;padding:12px;border-radius:13px;resize:vertical;line-height:1.55}
   .note:focus,.modal-card textarea:focus{outline:none;border-color:var(--blue)}
@@ -289,7 +294,12 @@
     <textarea class="note" id="todayNote" placeholder="Write today's plan, intentions, or any note…"></textarea></div>
 
   <!-- SKILLS -->
-  <div class="sec"><h2>🧠 Skill of the day <span class="r" id="skillToday"></span></h2><div class="card skills" id="skillList"></div></div>
+  <div class="sec"><h2>🧠 Skill of the day <span class="r" id="skillToday"></span></h2>
+    <div class="card pad">
+      <div class="skills" id="skillList" style="padding:0;margin-bottom:12px"></div>
+      <div class="hrs"><span>⏱️ Skill hours today</span><button class="cb sm" id="hrMinus">−</button><span id="hrNum">0</span><button class="cb sm" id="hrPlus">+</button></div>
+    </div>
+  </div>
 
   <!-- SMOKE -->
   <div class="sec"><h2>🚬 Smoke Dragon — shrink it weekly</h2>
@@ -459,16 +469,24 @@ function wkid(){const d=bdToday(),o=new Date(d.getFullYear(),0,1);return d.getFu
 function dayIdx(){const d=bdToday();return Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);}
 const WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function fmtDate(ds){const [y,m,d]=ds.split('-').map(Number),dt=new Date(y,m-1,d);return WD[dt.getDay()]+', '+d+' '+MO[m-1]+' '+y;}
-function freshDay(date){return {date,q:{},skill:null,smoke:0,done:false,rest:false};}
+function freshDay(date){return {date,q:{},skill:null,skillHrs:0,smoke:0,done:false,rest:false};}
+function weekdayOf(ds){const [y,m,d]=ds.split('-').map(Number);return new Date(y,m-1,d).getDay();}
+const isOffDate=ds=>{const w=weekdayOf(ds);return w===5||w===6;};            // Fri(5) & Sat(6) = weekend off
+const isOffToday=()=>isOffDate(dstr());
+function dayNum(ds){const [y,m,d]=(ds||dstr()).split('-').map(Number),t=new Date(y,m-1,d);
+  const [sy,sm,sd]=(S.startDate||dstr()).split('-').map(Number),s=new Date(sy,sm-1,sd);
+  return Math.floor((t-s)/864e5)+1;}
 
 let S=load();
 function load(){
   let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){s=null;}
-  if(!s)s={combo:0,best:0,total:0,wins:0,lvl:0,smokeTarget:10,
+  if(!s)s={combo:0,best:0,total:0,wins:0,lvl:0,smokeTarget:10,startDate:dstr(),
     stats:{business:0,brand:0,skills:0,health:0,wealth:0,life:0},
     deals:[],revByMonth:{},notes:{},hist:{},today:freshDay(dstr()),week:{id:wkid(),done:{}}};
   if(!s.deals)s.deals=[]; if(!s.revByMonth)s.revByMonth={}; if(!s.notes)s.notes={};   // migrate older saves
+  if(!s.startDate)s.startDate=dstr();
   if(s.today&&s.today.rest===undefined)s.today.rest=false;
+  if(s.today&&s.today.skillHrs===undefined)s.today.skillHrs=0;
   return s;
 }
 // Roll over a stale day — MUST run after S + all const helpers are initialized (avoids a TDZ crash)
@@ -501,15 +519,16 @@ function finalize(state,silent){
   const t=state.today, base=dayXP(t), win=isWin(t), earned=Math.round(base*mult(state.combo));
   state.total+=earned;
   TL.forEach(b=>{ if(t.q[b.id]) state.stats[b.stat]=(state.stats[b.stat]||0)+b.xp; });
-  const rec={xp:earned,smoke:t.smoke||0,q:Object.assign({},t.q),skill:t.skill}; // store details for progress
-  if(t.rest){ rec.rest=true; state.hist[t.date]=rec; }   // planned rest: streak frozen, not broken
+  const off=isOffDate(t.date);
+  const rec={xp:earned,smoke:t.smoke||0,q:Object.assign({},t.q),skill:t.skill,skillHrs:t.skillHrs||0};
+  if(t.rest||off){ if(t.rest)rec.rest=true; if(off)rec.off=true; state.hist[t.date]=rec; } // weekend/rest: streak frozen
   else {
     if(win){ state.combo++; state.wins++; if(state.combo>state.best)state.best=state.combo; }
     else state.combo=0;
     rec.win=win; state.hist[t.date]=rec;
   }
   state.today.done=true;
-  if(!silent)toast(t.rest?`🛡️ Rest day — streak protected (${state.combo}🔥 kept)`:win?`🏆 WIN DAY! +${earned} XP · Streak ${state.combo}🔥`:`Saved · +${earned} XP · streak reset. Tomorrow you win.`);
+  if(!silent)toast((t.rest||off)?`${off?'🌴 Off day':'🛡️ Rest day'} — streak safe (${state.combo}🔥 kept)`:win?`🏆 WIN DAY! +${earned} XP · Streak ${state.combo}🔥`:`Saved · +${earned} XP · streak reset. Tomorrow you win.`);
 }
 
 /* ================= RENDER ================= */
@@ -520,13 +539,14 @@ function render(){
 
   $('quote').textContent='“'+QUOTES[dayIdx()%QUOTES.length]+'”';
   $('streakNum').textContent=S.combo;
-  $('rankEmo').textContent=L.e; $('rankName').textContent=L.n; $('rankLvl').textContent='Level '+(S.lvl+1);
+  $('rankEmo').textContent=L.e; $('rankName').textContent=L.n; $('rankLvl').textContent='Level '+(S.lvl+1)+' · Day '+dayNum();
   $('todayXP').textContent=base; $('mult').textContent='x'+m;
   const pct=Math.min(1,base/WIN_XP);
   $('xpFill').style.width=pct*100+'%';
   $('ringFg').style.strokeDashoffset=RING*(1-pct);
   const wt=$('winTag');
-  if(isWin(t)){wt.textContent='✅ WIN ready';wt.style.color='var(--green)';}
+  if(isOffToday()){wt.textContent='🌴 Off day — streak safe';wt.style.color='var(--blue)';}
+  else if(isWin(t)){wt.textContent='✅ WIN ready';wt.style.color='var(--green)';}
   else{wt.textContent=(WIN_XP-base>0?(WIN_XP-base)+' XP':'')+(deadCount(t)<4?' · '+(4-deadCount(t))+' boss':'');wt.style.color='var(--muted)';}
 
   const en=energy(t),eb=$('energyBox');eb.className='card energy sec';eb.style.marginBottom='13px';
@@ -574,11 +594,14 @@ function render(){
       <div class="body"><div class="t">${w.t}</div><div class="s">${w.s}</div></div><div class="xp">+${w.xp}</div></div>`;}).join('');
 
   const e=$('endBtn');if(t.done){e.classList.add('done');e.textContent='✅ Day saved — back tomorrow';}
-  else{e.classList.remove('done');e.textContent='🏁 END DAY & SAVE';}
+  else{e.classList.remove('done');e.textContent=isOffToday()?'🌴 END OFF-DAY':'🏁 END DAY & SAVE';}
   const rb=$('restBtn');
-  if(t.done){rb.style.opacity=.5;rb.textContent=t.rest?'🛡️ Resting':'🛡️ Rest Day';}
-  else if(S.week.rest){rb.style.opacity=.5;rb.textContent='🛡️ Used';}
-  else{rb.style.opacity=1;rb.textContent='🛡️ Rest Day';}
+  if(isOffToday()){rb.style.display='none';}                 // weekend already auto-off
+  else{rb.style.display='';
+    if(t.done){rb.style.opacity=.5;rb.textContent=t.rest?'🛡️ Resting':'🛡️ Rest Day';}
+    else if(S.week.rest){rb.style.opacity=.5;rb.textContent='🛡️ Used';}
+    else{rb.style.opacity=1;rb.textContent='🛡️ Rest Day';}}
+  $('hrNum').textContent=(S.today.skillHrs||0);
 
   // business tracker
   $('kpiTotal').textContent='$'+totalRev().toLocaleString();
@@ -607,7 +630,8 @@ function renderCal(){
   const first=new Date(viewY,viewM-1,1).getDay(), dim=new Date(viewY,viewM,0).getDate();
   for(let b=0;b<first;b++)html+='<div class="dcell blank"></div>';
   for(let d=1;d<=dim;d++){const ds=viewY+'-'+pad(viewM)+'-'+pad(d),h=S.hist[ds],note=S.notes[ds]&&S.notes[ds].trim();
-    const cls=(h?(h.rest?'rest':h.win?'win':'loss'):'')+(ds===todayDs?' today':'');
+    const wd=new Date(viewY,viewM-1,d).getDay(),off=wd===5||wd===6;
+    const cls=(h?(h.rest?'rest':h.win?'win':'loss'):'')+(ds===todayDs?' today':'')+(off?' off':'');
     html+=`<div class="dcell ${cls}" data-day="${ds}">${d}${note?'<i class="ndot"></i>':''}</div>`;}
   $('cal').innerHTML=html;
 }
@@ -617,15 +641,16 @@ function calShift(n){viewM+=n; if(viewM<1){viewM=12;viewY--;} if(viewM>12){viewM
 let pPeriod='day';
 function periodDates(p){const out=[];
   if(p==='day')out.push(dstr());
-  else if(p==='week'){for(let i=6;i>=0;i--){const d=bdToday();d.setDate(d.getDate()-i);out.push(dstr(d));}}
+  else if(p==='week'){const d=bdToday(),sun=bdToday();sun.setDate(d.getDate()-d.getDay());      // week starts Sunday
+    for(let i=0;i<7;i++){const x=new Date(sun);x.setDate(sun.getDate()+i);out.push(dstr(x));}}
   else if(p==='month'){const y=+bdParts().year,m=+bdParts().month,dim=new Date(y,m,0).getDate();for(let d=1;d<=dim;d++)out.push(y+'-'+pad(m)+'-'+pad(d));}
   else{const y=+bdParts().year;for(let mo=1;mo<=12;mo++){const dim=new Date(y,mo,0).getDate();for(let d=1;d<=dim;d++)out.push(y+'-'+pad(mo)+'-'+pad(d));}}
   return out;}
 function renderProgress(){
   const dates=periodDates(pPeriod);
-  let win=0,xp=0,tracked=0,sSum=0,sN=0,rest=0;
+  let win=0,xp=0,tracked=0,sSum=0,sN=0,rest=0,off=0,shrs=0;
   const hc={gym:0,sales:0,content:0,skill:0,deep:0,pray:0};
-  dates.forEach(ds=>{const h=S.hist[ds]; if(!h)return; tracked++; xp+=h.xp||0; if(h.win)win++; if(h.rest)rest++;
+  dates.forEach(ds=>{const h=S.hist[ds]; if(!h)return; tracked++; xp+=h.xp||0; if(h.win)win++; if(h.rest)rest++; if(h.off)off++; shrs+=h.skillHrs||0;
     if(h.smoke!=null){sSum+=h.smoke;sN++;} const q=h.q||{};
     if(q.gym)hc.gym++; if(q.sales)hc.sales++; if(q.content)hc.content++; if(h.skill||q.skill)hc.skill++;
     if(q.work1||q.work2)hc.deep++; if(q.fajr&&q.dhuhr&&q.asr&&q.maghrib&&q.isha)hc.pray++;});
@@ -638,7 +663,9 @@ function renderProgress(){
   const rows=[['💪','Workout',hc.gym,'#4ade80'],['⚔️','Outreach',hc.sales,'#5ca8ff'],['📢','Content',hc.content,'#b98cff'],
     ['🧠','Skill',hc.skill,'#34d8c4'],['🎬','Deep work',hc.deep,'#5ca8ff'],['🕌','Full-prayer days',hc.pray,'#ffce6a']];
   $('pHabits').innerHTML=rows.map(([e,n,c,col])=>`<div class="phabit"><span>${e} ${n}</span><div class="bar"><i style="width:${Math.min(100,c/den*100)}%;background:${col}"></i></div><span class="c">${c}d</span></div>`).join('')
+    +`<div class="phabit"><span>⏱️ Skill hours</span><span class="c">${shrs.toFixed(1)}h</span></div>`
     +`<div class="phabit"><span>🚬 Avg cigarettes/day</span><span class="c">${sN?(sSum/sN).toFixed(1):'—'}</span></div>`
+    +`<div class="phabit"><span>🌴 Off days</span><span class="c">${off}d</span></div>`
     +`<div class="phabit"><span>🛡️ Rest days</span><span class="c">${rest}d</span></div>`
     +`<div class="phabit"><span>📆 Days tracked</span><span class="c">${tracked}d</span></div>`;
 }
@@ -717,7 +744,7 @@ $('importFile').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=ne
 // Daily notes + day-detail modal
 let editDay=null;
 function openDayModal(ds){editDay=ds;const h=S.hist[ds];
-  $('modalDate').textContent=fmtDate(ds);
+  $('modalDate').textContent='Day '+dayNum(ds)+' · '+fmtDate(ds)+(isOffDate(ds)?' · 🌴 off':'');
   $('modalStatus').textContent=ds===dstr()?'📌 Today':h?(h.rest?'🛡️ Rest day':h.win?('🏆 Win day · '+h.xp+' XP'):('Saved · '+h.xp+' XP')):'No record yet';
   $('modalNote').value=S.notes[ds]||'';
   $('dayModal').classList.add('show'); setTimeout(()=>$('modalNote').focus(),50);}
@@ -728,6 +755,8 @@ $('dayModal').onclick=e=>{ if(e.target.id==='dayModal')$('dayModal').classList.r
 $('todayNote').oninput=()=>{const v=$('todayNote').value,d=dstr(); if(v.trim())S.notes[d]=v; else delete S.notes[d]; save();};
 $('calPrev').onclick=()=>calShift(-1);
 $('calNext').onclick=()=>calShift(1);
+$('hrPlus').onclick=()=>{ if(S.today.done)return blocked(); S.today.skillHrs=Math.round(((S.today.skillHrs||0)+0.5)*10)/10; save(); render(); };
+$('hrMinus').onclick=()=>{ if(S.today.done)return blocked(); S.today.skillHrs=Math.max(0,Math.round(((S.today.skillHrs||0)-0.5)*10)/10); save(); render(); };
 
 let tt;function toast(m){const el=$('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2600);}
 
