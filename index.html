@@ -405,9 +405,13 @@ function load(){
     deals:[],revByMonth:{},hist:{},today:freshDay(dstr()),week:{id:wkid(),done:{}}};
   if(!s.deals)s.deals=[]; if(!s.revByMonth)s.revByMonth={};            // migrate older saves
   if(s.today&&s.today.rest===undefined)s.today.rest=false;
-  if(!s.today||s.today.date!==dstr()){ if(s.today&&!s.today.done)finalize(s,true); s.today=freshDay(dstr()); }
-  if(!s.week||s.week.id!==wkid())s.week={id:wkid(),done:{}};
   return s;
+}
+// Roll over a stale day — MUST run after S + all const helpers are initialized (avoids a TDZ crash)
+function rolloverIfNeeded(){
+  if(!S.today||S.today.date!==dstr()){ if(S.today&&!S.today.done)finalize(S,true); S.today=freshDay(dstr()); }
+  if(!S.week||S.week.id!==wkid())S.week={id:wkid(),done:{}};
+  save();
 }
 const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
 const mult=c=>c>=30?2:c>=7?1.5:c>=3?1.2:1;
@@ -599,6 +603,7 @@ $('importFile').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=ne
 
 let tt;function toast(m){const el=$('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2600);}
 
+rolloverIfNeeded(); // safe here: S and all helpers are now initialized
 render();
 setInterval(render,60000); // keep NOW + clock live
 </script>
