@@ -164,11 +164,29 @@
   .endbtn.done{background:var(--glass2);color:var(--muted);box-shadow:none;cursor:default}
 
   /* calendar */
-  .cal{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;padding:14px}
-  .dot{aspect-ratio:1;border-radius:7px;background:rgba(0,0,0,.3);border:1px solid var(--line);
-    display:flex;align-items:center;justify-content:center;font-size:.56rem;color:var(--faint);font-weight:700}
-  .dot.win{background:linear-gradient(160deg,var(--green),#2faa5e);border-color:transparent;color:#042b12}
-  .dot.loss{background:rgba(255,107,138,.18);border-color:rgba(255,107,138,.4);color:var(--red)}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;padding:13px}
+  .cal-h{font-size:.58rem;color:var(--muted);font-weight:800;text-align:center;padding-bottom:2px}
+  .dcell{aspect-ratio:1;border-radius:8px;background:rgba(0,0,0,.3);border:1px solid var(--line);display:flex;
+    align-items:center;justify-content:center;font-size:.64rem;color:var(--muted);font-weight:700;position:relative;cursor:pointer;transition:.15s}
+  .dcell:active{transform:scale(.92)}
+  .dcell.blank{background:none;border:none;cursor:default}
+  .dcell.win{background:linear-gradient(160deg,var(--green),#2faa5e);border-color:transparent;color:#042b12}
+  .dcell.loss{background:rgba(255,107,138,.18);border-color:rgba(255,107,138,.4);color:var(--red)}
+  .dcell.rest{background:rgba(92,168,255,.25);border-color:rgba(92,168,255,.5);color:var(--blue)}
+  .dcell.today{box-shadow:0 0 0 2px var(--gold)}
+  .ndot{position:absolute;bottom:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--gold)}
+  .note,.modal-card textarea{width:100%;min-height:88px;background:rgba(0,0,0,.3);border:1px solid var(--line2);color:var(--text);
+    font-family:inherit;font-size:.85rem;padding:12px;border-radius:13px;resize:vertical;line-height:1.55}
+  .note:focus,.modal-card textarea:focus{outline:none;border-color:var(--blue)}
+  .modal{position:fixed;inset:0;background:rgba(4,8,16,.72);backdrop-filter:blur(6px);z-index:80;display:none;align-items:center;justify-content:center;padding:20px}
+  .modal.show{display:flex}
+  .modal-card{background:var(--bg1);border:1px solid var(--line2);border-radius:18px;padding:18px;width:100%;max-width:420px;box-shadow:var(--shadow)}
+  .modal-card .md{font-size:1.02rem;font-weight:800}
+  .modal-card .ms{font-size:.74rem;color:var(--muted);margin:3px 0 11px}
+  .modal-actions{display:flex;gap:8px;margin-top:11px}
+  .modal-actions button{flex:1;padding:12px;border-radius:12px;border:none;font-family:inherit;font-weight:700;font-size:.84rem;cursor:pointer}
+  #modalSave{background:linear-gradient(100deg,var(--blue),var(--purple));color:#fff}
+  #modalClose{background:var(--glass2);color:var(--muted);border:1px solid var(--line2)}
 
   /* levels */
   .lv{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:12px;margin-bottom:6px;
@@ -254,6 +272,10 @@
   <!-- TIMELINE -->
   <div class="sec"><h2>⏰ Today — just attend the block <span class="r" id="nowClock"></span></h2><div id="timeline"></div></div>
 
+  <!-- TODAY NOTE -->
+  <div class="sec"><h2>📝 Today's Plan / Note</h2>
+    <textarea class="note" id="todayNote" placeholder="Write today's plan, intentions, or any note…"></textarea></div>
+
   <!-- SKILLS -->
   <div class="sec"><h2>🧠 Skill of the day <span class="r" id="skillToday"></span></h2><div class="card skills" id="skillList"></div></div>
 
@@ -313,6 +335,15 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
+
+<div class="modal" id="dayModal">
+  <div class="modal-card">
+    <div class="md" id="modalDate"></div>
+    <div class="ms" id="modalStatus"></div>
+    <textarea id="modalNote" placeholder="Notes / plan for this day…"></textarea>
+    <div class="modal-actions"><button id="modalSave">💾 Save</button><button id="modalClose">Close</button></div>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -395,6 +426,8 @@ function nowMin(){const p=bdParts();let h=+p.hour; if(h>=24)h-=24; return h*60+(
 function dstr(d){d=d||bdToday();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
 function wkid(){const d=bdToday(),o=new Date(d.getFullYear(),0,1);return d.getFullYear()+'-W'+Math.ceil((((d-o)/864e5)+o.getDay()+1)/7);}
 function dayIdx(){const d=bdToday();return Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);}
+const WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDate(ds){const [y,m,d]=ds.split('-').map(Number),dt=new Date(y,m-1,d);return WD[dt.getDay()]+', '+d+' '+MO[m-1]+' '+y;}
 function freshDay(date){return {date,q:{},skill:null,smoke:0,done:false,rest:false};}
 
 let S=load();
@@ -402,8 +435,8 @@ function load(){
   let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){s=null;}
   if(!s)s={combo:0,best:0,total:0,wins:0,lvl:0,smokeTarget:10,
     stats:{business:0,brand:0,skills:0,health:0,wealth:0,life:0},
-    deals:[],revByMonth:{},hist:{},today:freshDay(dstr()),week:{id:wkid(),done:{}}};
-  if(!s.deals)s.deals=[]; if(!s.revByMonth)s.revByMonth={};            // migrate older saves
+    deals:[],revByMonth:{},notes:{},hist:{},today:freshDay(dstr()),week:{id:wkid(),done:{}}};
+  if(!s.deals)s.deals=[]; if(!s.revByMonth)s.revByMonth={}; if(!s.notes)s.notes={};   // migrate older saves
   if(s.today&&s.today.rest===undefined)s.today.rest=false;
   return s;
 }
@@ -523,10 +556,15 @@ function render(){
     `<div class="deal"><span>${d.retainer?'🔁 ':''}${d.name||'Deal'}</span><span class="a">$${(d.amount||0).toLocaleString()}</span></div>`).join('')
     ||'<div style="color:var(--faint);font-size:.74rem">No deals yet — log your first $2k client here. 💪</div>';
 
-  let c='';for(let i=29;i>=0;i--){const dd=bdToday();dd.setDate(dd.getDate()-i);const h=S.hist[dstr(dd)];
-    const cls=h?(h.rest?'rest':h.win?'win':'loss'):'';const lbl=h?(h.rest?'·':h.win?'★':'·'):dd.getDate();
-    c+=`<div class="dot ${cls}" title="${dstr(dd)}">${lbl}</div>`;}
+  const todayDs=dstr();
+  let c=['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div class="cal-h">${d}</div>`).join('');
+  const days=[];for(let i=29;i>=0;i--){const dd=bdToday();dd.setDate(dd.getDate()-i);days.push(dd);}
+  for(let b=0;b<days[0].getDay();b++)c+='<div class="dcell blank"></div>';
+  days.forEach(dd=>{const ds=dstr(dd),h=S.hist[ds],note=S.notes[ds]&&S.notes[ds].trim();
+    const cls=(h?(h.rest?'rest':h.win?'win':'loss'):'')+(ds===todayDs?' today':'');
+    c+=`<div class="dcell ${cls}" data-day="${ds}">${dd.getDate()}${note?'<i class="ndot"></i>':''}</div>`;});
   $('cal').innerHTML=c;
+  if(document.activeElement!==$('todayNote'))$('todayNote').value=S.notes[todayDs]||'';
 
   $('lvlList').innerHTML=LEVELS.map((l,i)=>{const g=i<=S.lvl;
     return `<div class="lv ${g?'got':''}" data-lvl="${i}"><div class="e">${l.e}</div>
@@ -538,6 +576,8 @@ function toggleQ(id){ if(S.today.done)return blocked(); S.today.q[id]=!S.today.q
 function blocked(){toast('Day already saved. See you tomorrow 🌙');}
 
 document.addEventListener('click',ev=>{
+  const dc=ev.target.closest('[data-day]');
+  if(dc){ openDayModal(dc.dataset.day); return; }
   const q=ev.target.closest('[data-q]'), bo=ev.target.closest('[data-boss]'),
         sk=ev.target.closest('[data-skill]'), wk=ev.target.closest('[data-week]'), lv=ev.target.closest('[data-lvl]');
   if(q){ toggleQ(q.dataset.q); return; }
@@ -600,6 +640,19 @@ $('importFile').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=ne
     localStorage.setItem(KEY,JSON.stringify(d));toast('📥 Restored! Reloading…');setTimeout(()=>location.reload(),700);}
     catch(e){toast('❌ Invalid backup file');}};
   r.readAsText(f);};
+
+// Daily notes + day-detail modal
+let editDay=null;
+function openDayModal(ds){editDay=ds;const h=S.hist[ds];
+  $('modalDate').textContent=fmtDate(ds);
+  $('modalStatus').textContent=ds===dstr()?'📌 Today':h?(h.rest?'🛡️ Rest day':h.win?('🏆 Win day · '+h.xp+' XP'):('Saved · '+h.xp+' XP')):'No record yet';
+  $('modalNote').value=S.notes[ds]||'';
+  $('dayModal').classList.add('show'); setTimeout(()=>$('modalNote').focus(),50);}
+$('modalSave').onclick=()=>{const v=$('modalNote').value; if(v.trim())S.notes[editDay]=v; else delete S.notes[editDay];
+  save(); render(); $('dayModal').classList.remove('show'); toast('📝 Note saved');};
+$('modalClose').onclick=()=>$('dayModal').classList.remove('show');
+$('dayModal').onclick=e=>{ if(e.target.id==='dayModal')$('dayModal').classList.remove('show'); };
+$('todayNote').oninput=()=>{const v=$('todayNote').value,d=dstr(); if(v.trim())S.notes[d]=v; else delete S.notes[d]; save();};
 
 let tt;function toast(m){const el=$('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2600);}
 
