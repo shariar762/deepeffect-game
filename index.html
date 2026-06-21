@@ -180,6 +180,26 @@
 
   .foot{text-align:center;color:var(--faint);font-size:.68rem;margin-top:20px;line-height:1.8}
   .reset{background:var(--glass);border:1px solid var(--line);color:var(--muted);font-size:.66rem;font-weight:700;padding:6px 12px;border-radius:9px;cursor:pointer}
+  /* business tracker + forms */
+  .inp{background:rgba(0,0,0,.32);border:1px solid var(--line2);color:var(--text);font-family:inherit;font-size:.84rem;padding:10px 12px;border-radius:11px;width:100%}
+  .inp::placeholder{color:var(--faint)}
+  .inp:focus{outline:none;border-color:var(--blue)}
+  .btn{background:var(--glass2);border:1px solid var(--line2);color:var(--text);font-family:inherit;font-weight:700;font-size:.8rem;padding:10px 14px;border-radius:11px;cursor:pointer;white-space:nowrap}
+  .btn:active{transform:scale(.96)}
+  .btn.go{background:linear-gradient(100deg,var(--blue),var(--purple));color:#fff;border:none}
+  .kpis{display:flex;gap:8px;margin-bottom:11px}
+  .kpi{flex:1;background:rgba(0,0,0,.22);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center}
+  .kpi .v{font-size:1.02rem;font-weight:800;color:var(--gold)}
+  .kpi .l{font-size:.56rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+  .frm{display:flex;flex-direction:column;gap:8px}
+  .frm .row{display:flex;gap:8px;align-items:center}
+  .chk{display:flex;align-items:center;gap:5px;font-size:.74rem;color:var(--muted);font-weight:700;white-space:nowrap}
+  .deal{display:flex;justify-content:space-between;font-size:.76rem;padding:7px 2px;border-bottom:1px solid var(--line)}
+  .deal .a{color:var(--green);font-weight:800}
+  .restbtn{flex:1;border:none;border-radius:16px;font-family:inherit;font-size:.92rem;font-weight:800;cursor:pointer;
+    background:linear-gradient(100deg,#5ca8ff,#34d8c4);color:#04121f;transition:.18s}
+  .restbtn:active{transform:scale(.97)}
+  .dot.rest{background:rgba(92,168,255,.25);border-color:rgba(92,168,255,.5);color:var(--blue)}
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(140px);z-index:60;
     background:rgba(20,28,48,.96);border:1px solid var(--line2);color:var(--text);padding:13px 20px;border-radius:14px;
     font-size:.86rem;font-weight:700;box-shadow:0 16px 50px rgba(0,0,0,.6);transition:transform .42s cubic-bezier(.2,1,.3,1);
@@ -252,15 +272,45 @@
   <div class="sec"><h2>📆 Weekly Quests <span class="r" id="weekTag"></span></h2><div id="weekList"></div></div>
 
   <!-- END -->
-  <div class="sec"><button class="endbtn" id="endBtn">🏁 END DAY &amp; SAVE</button></div>
+  <div class="sec" style="display:flex;gap:10px">
+    <button class="endbtn" id="endBtn" style="flex:2">🏁 END DAY &amp; SAVE</button>
+    <button class="restbtn" id="restBtn">🛡️ Rest Day</button>
+  </div>
 
   <!-- CAL -->
   <div class="sec"><h2>📅 Last 30 Days</h2><div class="card cal" id="cal"></div></div>
 
-  <!-- LEVELS -->
-  <div class="sec"><h2>⭐ Business Levels — tap when you hit it</h2><div id="lvlList"></div></div>
+  <!-- BUSINESS TRACKER -->
+  <div class="sec"><h2>💼 Business Tracker — log real deals</h2>
+    <div class="card pad">
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="kpiTotal">$0</div><div class="l">Total earned</div></div>
+        <div class="kpi"><div class="v" id="kpiMonth">$0</div><div class="l">This month</div></div>
+        <div class="kpi"><div class="v" id="kpiDeals">0</div><div class="l">Deals</div></div>
+      </div>
+      <div class="frm">
+        <input class="inp" id="dealName" placeholder="Client / project name (optional)">
+        <div class="row">
+          <input class="inp" id="dealAmt" type="number" inputmode="numeric" placeholder="Amount $" style="flex:1">
+          <label class="chk"><input type="checkbox" id="dealRet"> Retainer</label>
+          <button class="btn go" id="addDeal">+ Add</button>
+        </div>
+      </div>
+      <div id="dealList" style="margin-top:11px"></div>
+    </div>
+  </div>
 
-  <div class="foot">Built for Shariar 🚀 · progress saved on this device<br><button class="reset" id="resetBtn">Reset today</button></div>
+  <!-- LEVELS -->
+  <div class="sec"><h2>⭐ Business Levels — auto-unlocks from your deals</h2><div id="lvlList"></div></div>
+
+  <div class="foot">Built for Shariar 🚀 · progress saved on this device
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:9px;flex-wrap:wrap">
+      <button class="reset" id="exportBtn">💾 Backup</button>
+      <button class="reset" id="importBtn">📥 Restore</button>
+      <button class="reset" id="resetBtn">Reset today</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json" style="display:none">
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -345,20 +395,34 @@ function nowMin(){const p=bdParts();let h=+p.hour; if(h>=24)h-=24; return h*60+(
 function dstr(d){d=d||bdToday();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
 function wkid(){const d=bdToday(),o=new Date(d.getFullYear(),0,1);return d.getFullYear()+'-W'+Math.ceil((((d-o)/864e5)+o.getDay()+1)/7);}
 function dayIdx(){const d=bdToday();return Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);}
-function freshDay(date){return {date,q:{},skill:null,smoke:0,done:false};}
+function freshDay(date){return {date,q:{},skill:null,smoke:0,done:false,rest:false};}
 
 let S=load();
 function load(){
   let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){s=null;}
   if(!s)s={combo:0,best:0,total:0,wins:0,lvl:0,smokeTarget:10,
     stats:{business:0,brand:0,skills:0,health:0,wealth:0,life:0},
-    hist:{},today:freshDay(dstr()),week:{id:wkid(),done:{}}};
+    deals:[],revByMonth:{},hist:{},today:freshDay(dstr()),week:{id:wkid(),done:{}}};
+  if(!s.deals)s.deals=[]; if(!s.revByMonth)s.revByMonth={};            // migrate older saves
+  if(s.today&&s.today.rest===undefined)s.today.rest=false;
   if(!s.today||s.today.date!==dstr()){ if(s.today&&!s.today.done)finalize(s,true); s.today=freshDay(dstr()); }
   if(!s.week||s.week.id!==wkid())s.week={id:wkid(),done:{}};
   return s;
 }
 const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
 const mult=c=>c>=30?2:c>=7?1.5:c>=3?1.2:1;
+function curMonth(){const p=bdParts();return p.year+'-'+p.month;}
+function totalRev(){return Object.values(S.revByMonth).reduce((a,b)=>a+b,0);}
+function syncLevel(){ // real money → real business level (only bumps up, never down)
+  let imp=S.lvl, mr=S.revByMonth[curMonth()]||0;
+  if(totalRev()>0)imp=Math.max(imp,1);                                  // first deal → Hustler
+  if(S.deals.some(d=>d.retainer&&d.amount>=5000))imp=Math.max(imp,3);   // $5k retainer → Retainer King
+  if(mr>=8000)imp=Math.max(imp,2);
+  if(mr>=30000)imp=Math.max(imp,4);
+  if(mr>=100000)imp=Math.max(imp,5);
+  if(mr>=417000)imp=Math.max(imp,6);
+  if(imp>S.lvl){S.lvl=imp;setTimeout(()=>toast('⭐ LEVEL UP! '+LEVELS[imp].e+' '+LEVELS[imp].n),300);}
+}
 const dayXP=t=>TL.reduce((x,b)=>x+(t.q[b.id]?b.xp:0),0);
 const energy=t=>Math.max(0,Math.min(100,50+TL.reduce((e,b)=>e+(t.q[b.id]?b.en:0),0)));
 const bossDead=(t,b)=> b.q==='_smoke' ? (t.smoke||0)<=S.smokeTarget : !!t.q[b.q];
@@ -369,11 +433,14 @@ function finalize(state,silent){
   const t=state.today, base=dayXP(t), win=isWin(t), earned=Math.round(base*mult(state.combo));
   state.total+=earned;
   TL.forEach(b=>{ if(t.q[b.id]) state.stats[b.stat]=(state.stats[b.stat]||0)+b.xp; });
-  if(win){ state.combo++; state.wins++; if(state.combo>state.best)state.best=state.combo; }
-  else state.combo=0;
-  state.hist[t.date]={xp:earned,win,smoke:t.smoke||0};
+  if(t.rest){ state.hist[t.date]={xp:earned,rest:true}; }   // planned rest: streak frozen, not broken
+  else {
+    if(win){ state.combo++; state.wins++; if(state.combo>state.best)state.best=state.combo; }
+    else state.combo=0;
+    state.hist[t.date]={xp:earned,win,smoke:t.smoke||0};
+  }
   state.today.done=true;
-  if(!silent)toast(win?`🏆 WIN DAY! +${earned} XP · Streak ${state.combo}🔥`:`Saved · +${earned} XP · streak reset. Tomorrow you win.`);
+  if(!silent)toast(t.rest?`🛡️ Rest day — streak protected (${state.combo}🔥 kept)`:win?`🏆 WIN DAY! +${earned} XP · Streak ${state.combo}🔥`:`Saved · +${earned} XP · streak reset. Tomorrow you win.`);
 }
 
 /* ================= RENDER ================= */
@@ -439,9 +506,22 @@ function render(){
 
   const e=$('endBtn');if(t.done){e.classList.add('done');e.textContent='✅ Day saved — back tomorrow';}
   else{e.classList.remove('done');e.textContent='🏁 END DAY & SAVE';}
+  const rb=$('restBtn');
+  if(t.done){rb.style.opacity=.5;rb.textContent=t.rest?'🛡️ Resting':'🛡️ Rest Day';}
+  else if(S.week.rest){rb.style.opacity=.5;rb.textContent='🛡️ Used';}
+  else{rb.style.opacity=1;rb.textContent='🛡️ Rest Day';}
+
+  // business tracker
+  $('kpiTotal').textContent='$'+totalRev().toLocaleString();
+  $('kpiMonth').textContent='$'+(S.revByMonth[curMonth()]||0).toLocaleString();
+  $('kpiDeals').textContent=S.deals.length;
+  $('dealList').innerHTML=S.deals.slice(-5).reverse().map(d=>
+    `<div class="deal"><span>${d.retainer?'🔁 ':''}${d.name||'Deal'}</span><span class="a">$${(d.amount||0).toLocaleString()}</span></div>`).join('')
+    ||'<div style="color:var(--faint);font-size:.74rem">No deals yet — log your first $2k client here. 💪</div>';
 
   let c='';for(let i=29;i>=0;i--){const dd=bdToday();dd.setDate(dd.getDate()-i);const h=S.hist[dstr(dd)];
-    c+=`<div class="dot ${h?(h.win?'win':'loss'):''}" title="${dstr(dd)}">${h?(h.win?'★':'·'):dd.getDate()}</div>`;}
+    const cls=h?(h.rest?'rest':h.win?'win':'loss'):'';const lbl=h?(h.rest?'·':h.win?'★':'·'):dd.getDate();
+    c+=`<div class="dot ${cls}" title="${dstr(dd)}">${lbl}</div>`;}
   $('cal').innerHTML=c;
 
   $('lvlList').innerHTML=LEVELS.map((l,i)=>{const g=i<=S.lvl;
@@ -486,6 +566,36 @@ $('lowerTarget').onclick=()=>{ if(S.smokeTarget<=0)return toast('Already 0 — D
     S.smokeTarget--;S.total+=40;save();render();toast('🐉 Dragon weakened! Target '+S.smokeTarget+' · +40 XP'); } };
 $('endBtn').onclick=()=>{ if(S.today.done)return; finalize(S,false); save(); render(); };
 $('resetBtn').onclick=()=>{ if(confirm('Reset today\'s checks? (history stays)')){S.today=freshDay(dstr());save();render();} };
+
+// Rest Day token (1 per week) — protects the streak
+$('restBtn').onclick=()=>{ if(S.today.done)return;
+  if(S.week.rest)return toast('Rest day already used this week 🛡️');
+  if(confirm('Use your weekly Rest Day?\nStreak stays safe, you recharge guilt-free. (1 per week)')){
+    S.week.rest=true; S.today.rest=true; finalize(S,false); save(); render(); } };
+
+// Business tracker — log a deal
+$('addDeal').onclick=()=>{
+  const name=$('dealName').value.trim();
+  const amt=Math.round(+$('dealAmt').value||0);
+  if(amt<=0)return toast('Enter a $ amount');
+  const ret=$('dealRet').checked;
+  S.deals.push({name,amount:amt,retainer:ret,date:dstr(),month:curMonth()});
+  S.revByMonth[curMonth()]=(S.revByMonth[curMonth()]||0)+amt;
+  S.stats.business=(S.stats.business||0)+100;
+  $('dealName').value='';$('dealAmt').value='';$('dealRet').checked=false;
+  syncLevel(); save(); render();
+  toast('💰 +$'+amt.toLocaleString()+' logged · +100 Business XP'); };
+
+// Backup / Restore
+function download(name,text){const b=new Blob([text],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');
+  a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);}
+$('exportBtn').onclick=()=>{download('life_rpg_backup_'+dstr()+'.json',JSON.stringify(S));toast('💾 Backup file downloaded');};
+$('importBtn').onclick=()=>$('importFile').click();
+$('importFile').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||typeof d!=='object')throw 0;
+    localStorage.setItem(KEY,JSON.stringify(d));toast('📥 Restored! Reloading…');setTimeout(()=>location.reload(),700);}
+    catch(e){toast('❌ Invalid backup file');}};
+  r.readAsText(f);};
 
 let tt;function toast(m){const el=$('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2600);}
 
