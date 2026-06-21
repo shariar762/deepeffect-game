@@ -164,7 +164,19 @@
   .endbtn.done{background:var(--glass2);color:var(--muted);box-shadow:none;cursor:default}
 
   /* calendar */
-  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;padding:13px}
+  .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .cal-title{font-weight:800;font-size:.94rem}
+  .navbtn{width:34px;height:34px;border-radius:10px;border:1px solid var(--line2);background:var(--glass2);color:var(--text);font-size:1.15rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .navbtn:active{transform:scale(.92)}
+  .ptabs{display:flex;gap:6px;margin-bottom:12px}
+  .ptab{flex:1;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--glass);color:var(--muted);font-family:inherit;font-weight:700;font-size:.78rem;cursor:pointer}
+  .ptab.on{background:linear-gradient(100deg,var(--blue),var(--purple));color:#fff;border:none}
+  .phabit{display:flex;justify-content:space-between;align-items:center;font-size:.79rem;padding:8px 2px;border-bottom:1px solid var(--line)}
+  .phabit>span:first-child{min-width:118px}
+  .phabit .c{font-weight:800;color:var(--text);min-width:36px;text-align:right}
+  .phabit .bar{flex:1;height:6px;background:rgba(0,0,0,.3);border-radius:4px;margin:0 10px;overflow:hidden}
+  .phabit .bar>i{display:block;height:100%;border-radius:4px;transition:width .4s}
   .cal-h{font-size:.58rem;color:var(--muted);font-weight:800;text-align:center;padding-bottom:2px}
   .dcell{aspect-ratio:1;border-radius:8px;background:rgba(0,0,0,.3);border:1px solid var(--line);display:flex;
     align-items:center;justify-content:center;font-size:.64rem;color:var(--muted);font-weight:700;position:relative;cursor:pointer;transition:.15s}
@@ -299,8 +311,27 @@
     <button class="restbtn" id="restBtn">🛡️ Rest Day</button>
   </div>
 
-  <!-- CAL -->
-  <div class="sec"><h2>📅 Last 30 Days</h2><div class="card cal" id="cal"></div></div>
+  <!-- PROGRESS -->
+  <div class="sec"><h2>📈 Progress — daily · weekly · monthly · yearly</h2>
+    <div class="card pad">
+      <div class="ptabs">
+        <button class="ptab on" data-p="day">Day</button>
+        <button class="ptab" data-p="week">Week</button>
+        <button class="ptab" data-p="month">Month</button>
+        <button class="ptab" data-p="year">Year</button>
+      </div>
+      <div class="kpis" id="pKpis"></div>
+      <div id="pHabits"></div>
+    </div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="sec"><h2>📅 Calendar</h2>
+    <div class="card pad">
+      <div class="cal-nav"><button class="navbtn" id="calPrev">‹</button><div class="cal-title" id="calTitle"></div><button class="navbtn" id="calNext">›</button></div>
+      <div class="calgrid" id="cal"></div>
+    </div>
+  </div>
 
   <!-- BUSINESS TRACKER -->
   <div class="sec"><h2>💼 Business Tracker — log real deals</h2>
@@ -470,11 +501,12 @@ function finalize(state,silent){
   const t=state.today, base=dayXP(t), win=isWin(t), earned=Math.round(base*mult(state.combo));
   state.total+=earned;
   TL.forEach(b=>{ if(t.q[b.id]) state.stats[b.stat]=(state.stats[b.stat]||0)+b.xp; });
-  if(t.rest){ state.hist[t.date]={xp:earned,rest:true}; }   // planned rest: streak frozen, not broken
+  const rec={xp:earned,smoke:t.smoke||0,q:Object.assign({},t.q),skill:t.skill}; // store details for progress
+  if(t.rest){ rec.rest=true; state.hist[t.date]=rec; }   // planned rest: streak frozen, not broken
   else {
     if(win){ state.combo++; state.wins++; if(state.combo>state.best)state.best=state.combo; }
     else state.combo=0;
-    state.hist[t.date]={xp:earned,win,smoke:t.smoke||0};
+    rec.win=win; state.hist[t.date]=rec;
   }
   state.today.done=true;
   if(!silent)toast(t.rest?`🛡️ Rest day — streak protected (${state.combo}🔥 kept)`:win?`🏆 WIN DAY! +${earned} XP · Streak ${state.combo}🔥`:`Saved · +${earned} XP · streak reset. Tomorrow you win.`);
@@ -556,15 +588,8 @@ function render(){
     `<div class="deal"><span>${d.retainer?'🔁 ':''}${d.name||'Deal'}</span><span class="a">$${(d.amount||0).toLocaleString()}</span></div>`).join('')
     ||'<div style="color:var(--faint);font-size:.74rem">No deals yet — log your first $2k client here. 💪</div>';
 
-  const todayDs=dstr();
-  let c=['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div class="cal-h">${d}</div>`).join('');
-  const days=[];for(let i=29;i>=0;i--){const dd=bdToday();dd.setDate(dd.getDate()-i);days.push(dd);}
-  for(let b=0;b<days[0].getDay();b++)c+='<div class="dcell blank"></div>';
-  days.forEach(dd=>{const ds=dstr(dd),h=S.hist[ds],note=S.notes[ds]&&S.notes[ds].trim();
-    const cls=(h?(h.rest?'rest':h.win?'win':'loss'):'')+(ds===todayDs?' today':'');
-    c+=`<div class="dcell ${cls}" data-day="${ds}">${dd.getDate()}${note?'<i class="ndot"></i>':''}</div>`;});
-  $('cal').innerHTML=c;
-  if(document.activeElement!==$('todayNote'))$('todayNote').value=S.notes[todayDs]||'';
+  renderCal(); renderProgress();
+  if(document.activeElement!==$('todayNote'))$('todayNote').value=S.notes[dstr()]||'';
 
   $('lvlList').innerHTML=LEVELS.map((l,i)=>{const g=i<=S.lvl;
     return `<div class="lv ${g?'got':''}" data-lvl="${i}"><div class="e">${l.e}</div>
@@ -572,12 +597,60 @@ function render(){
 }
 
 /* ================= EVENTS ================= */
+// --- month calendar ---
+const MO_FULL=['January','February','March','April','May','June','July','August','September','October','November','December'];
+let viewY=+bdParts().year, viewM=+bdParts().month;
+function renderCal(){
+  const todayDs=dstr();
+  $('calTitle').textContent=MO_FULL[viewM-1]+' '+viewY;
+  let html=['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div class="cal-h">${d}</div>`).join('');
+  const first=new Date(viewY,viewM-1,1).getDay(), dim=new Date(viewY,viewM,0).getDate();
+  for(let b=0;b<first;b++)html+='<div class="dcell blank"></div>';
+  for(let d=1;d<=dim;d++){const ds=viewY+'-'+pad(viewM)+'-'+pad(d),h=S.hist[ds],note=S.notes[ds]&&S.notes[ds].trim();
+    const cls=(h?(h.rest?'rest':h.win?'win':'loss'):'')+(ds===todayDs?' today':'');
+    html+=`<div class="dcell ${cls}" data-day="${ds}">${d}${note?'<i class="ndot"></i>':''}</div>`;}
+  $('cal').innerHTML=html;
+}
+function calShift(n){viewM+=n; if(viewM<1){viewM=12;viewY--;} if(viewM>12){viewM=1;viewY++;} renderCal();}
+
+// --- progress: day / week / month / year ---
+let pPeriod='day';
+function periodDates(p){const out=[];
+  if(p==='day')out.push(dstr());
+  else if(p==='week'){for(let i=6;i>=0;i--){const d=bdToday();d.setDate(d.getDate()-i);out.push(dstr(d));}}
+  else if(p==='month'){const y=+bdParts().year,m=+bdParts().month,dim=new Date(y,m,0).getDate();for(let d=1;d<=dim;d++)out.push(y+'-'+pad(m)+'-'+pad(d));}
+  else{const y=+bdParts().year;for(let mo=1;mo<=12;mo++){const dim=new Date(y,mo,0).getDate();for(let d=1;d<=dim;d++)out.push(y+'-'+pad(mo)+'-'+pad(d));}}
+  return out;}
+function renderProgress(){
+  const dates=periodDates(pPeriod);
+  let win=0,xp=0,tracked=0,sSum=0,sN=0,rest=0;
+  const hc={gym:0,sales:0,content:0,skill:0,deep:0,pray:0};
+  dates.forEach(ds=>{const h=S.hist[ds]; if(!h)return; tracked++; xp+=h.xp||0; if(h.win)win++; if(h.rest)rest++;
+    if(h.smoke!=null){sSum+=h.smoke;sN++;} const q=h.q||{};
+    if(q.gym)hc.gym++; if(q.sales)hc.sales++; if(q.content)hc.content++; if(h.skill||q.skill)hc.skill++;
+    if(q.work1||q.work2)hc.deep++; if(q.fajr&&q.dhuhr&&q.asr&&q.maghrib&&q.isha)hc.pray++;});
+  let rev=0; S.deals.forEach(d=>{ if(dates.indexOf(d.date)>=0)rev+=d.amount||0; });
+  document.querySelectorAll('.ptab').forEach(b=>b.classList.toggle('on',b.dataset.p===pPeriod));
+  $('pKpis').innerHTML=`<div class="kpi"><div class="v">${win}</div><div class="l">Win days</div></div>
+    <div class="kpi"><div class="v">${xp.toLocaleString()}</div><div class="l">XP earned</div></div>
+    <div class="kpi"><div class="v">$${rev.toLocaleString()}</div><div class="l">Revenue</div></div>`;
+  const den=Math.max(1,tracked);
+  const rows=[['💪','Workout',hc.gym,'#4ade80'],['⚔️','Outreach',hc.sales,'#5ca8ff'],['📢','Content',hc.content,'#b98cff'],
+    ['🧠','Skill',hc.skill,'#34d8c4'],['🎬','Deep work',hc.deep,'#5ca8ff'],['🕌','Full-prayer days',hc.pray,'#ffce6a']];
+  $('pHabits').innerHTML=rows.map(([e,n,c,col])=>`<div class="phabit"><span>${e} ${n}</span><div class="bar"><i style="width:${Math.min(100,c/den*100)}%;background:${col}"></i></div><span class="c">${c}d</span></div>`).join('')
+    +`<div class="phabit"><span>🚬 Avg cigarettes/day</span><span class="c">${sN?(sSum/sN).toFixed(1):'—'}</span></div>`
+    +`<div class="phabit"><span>🛡️ Rest days</span><span class="c">${rest}d</span></div>`
+    +`<div class="phabit"><span>📆 Days tracked</span><span class="c">${tracked}d</span></div>`;
+}
+
 function toggleQ(id){ if(S.today.done)return blocked(); S.today.q[id]=!S.today.q[id]; save(); render(); }
 function blocked(){toast('Day already saved. See you tomorrow 🌙');}
 
 document.addEventListener('click',ev=>{
   const dc=ev.target.closest('[data-day]');
   if(dc){ openDayModal(dc.dataset.day); return; }
+  const pt=ev.target.closest('[data-p]');
+  if(pt){ pPeriod=pt.dataset.p; renderProgress(); return; }
   const q=ev.target.closest('[data-q]'), bo=ev.target.closest('[data-boss]'),
         sk=ev.target.closest('[data-skill]'), wk=ev.target.closest('[data-week]'), lv=ev.target.closest('[data-lvl]');
   if(q){ toggleQ(q.dataset.q); return; }
@@ -653,6 +726,8 @@ $('modalSave').onclick=()=>{const v=$('modalNote').value; if(v.trim())S.notes[ed
 $('modalClose').onclick=()=>$('dayModal').classList.remove('show');
 $('dayModal').onclick=e=>{ if(e.target.id==='dayModal')$('dayModal').classList.remove('show'); };
 $('todayNote').oninput=()=>{const v=$('todayNote').value,d=dstr(); if(v.trim())S.notes[d]=v; else delete S.notes[d]; save();};
+$('calPrev').onclick=()=>calShift(-1);
+$('calNext').onclick=()=>calShift(1);
 
 let tt;function toast(m){const el=$('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2600);}
 
