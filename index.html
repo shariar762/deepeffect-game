@@ -371,6 +371,7 @@
       <button class="reset" id="exportBtn">💾 Backup</button>
       <button class="reset" id="importBtn">📥 Restore</button>
       <button class="reset" id="resetBtn">Reset today</button>
+      <button class="reset" id="wipeBtn" style="border-color:rgba(255,107,138,.4);color:var(--red)">🗑️ Start Over</button>
     </div>
     <input type="file" id="importFile" accept="application/json" style="display:none">
   </div>
@@ -710,6 +711,12 @@ $('lowerTarget').onclick=()=>{ if(S.smokeTarget<=0)return toast('Already 0 — D
     S.smokeTarget--;S.total+=40;save();render();toast('🐉 Dragon weakened! Target '+S.smokeTarget+' · +40 XP'); } };
 $('endBtn').onclick=()=>{ if(S.today.done)return; finalize(S,false); save(); render(); };
 $('resetBtn').onclick=()=>{ if(confirm('Reset today\'s checks? (history stays)')){S.today=freshDay(dstr());save();render();} };
+$('wipeBtn').onclick=()=>{
+  if(confirm('Start Over? This ERASES everything — XP, streak, history, deals, notes — and restarts at Day 1 today. Cannot be undone.')
+   && confirm('Are you 100% sure? Tip: tap 💾 Backup first if you might want this data later.')){
+    localStorage.removeItem(KEY); location.reload();
+  }
+};
 
 // Rest Day token (1 per week) — protects the streak
 $('restBtn').onclick=()=>{ if(S.today.done)return;
