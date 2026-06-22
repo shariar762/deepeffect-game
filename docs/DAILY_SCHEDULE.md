@@ -1,27 +1,30 @@
 # 🗓️ DAILY SCHEDULE — "Just Attend"
-*Prayer-anchored. I don't decide — I show up to the block. Prayer times = Bangladesh June approx; adjust to local.*
+*Scheduled around Shariar's masjid prayer times (Badda). No idle gaps — every slot maps to a block.*
+
+**Masjid waqt:** Fajr 4:30 · Dhuhr 1:15 · Asr 5:00 · Maghrib 6:50 · Isha 8:30
 
 | Time | Block | What I do |
 |------|-------|-----------|
-| ~3:50 | 🕌 **FAJR** | Wake + namaz. Quran/rest allowed till 5:30 |
-| 5:30 | ⚔️ **OUTREACH** | 10 cold outreaches — the #1 money task, done first |
-| 7:00 | 💪 **GYM** | 1 hour |
-| 8:00 | 🚿🍳 Breakfast + shower | Refuel |
-| 8:45 | 🎬 **DEEP WORK 1** | Client / studio work |
-| ~12:05 | 🕌 **DHUHR** + lunch + 🛌 20-min nap | Recharge (early Fajr → nap matters) |
-| 13:30 | 🎬 **DEEP WORK 2** | Client work / portfolio |
-| ~16:37 | 🕌 **ASR** → 🧠 **SKILL** | Namaz, then learn 1 skill |
-| ~18:51 | 🕌 **MAGHRIB** → 📢 **CONTENT** | Namaz, then content creation |
-| ~20:14 | 🕌 **ISHA** + dinner | — |
-| 20:45 | 🧹 **REMAINING** | Admin, follow-ups, 15-min invest/money |
-| 21:30 | 📝 **SHUTDOWN** | Plan tomorrow, phone out of room |
-| ~22:00 | 😴 **SLEEP** | To wake for Fajr |
+| 4:30 | 🕌 **FAJR** | Wake + namaz |
+| 4:45 | 📖 **Quran / phone-free** | No morning scroll |
+| 5:30 | ⚔️ **OUTREACH** | 10 cold outreaches — the #1 money task |
+| 7:00 | 💪 **GYM** | 60 min |
+| 8:15 | 🚿🍳 Breakfast + shower | Refuel |
+| 9:00 | 🎬 **DEEP WORK 1** | Client / studio work |
+| 1:15 | 🕌 **DHUHR** + lunch + nap | Recharge |
+| 2:15 | 🎬 **DEEP WORK 2** | Client work / portfolio |
+| 5:00 | 🕌 **ASR** | Pray |
+| 5:15 | 🧠 **SKILL** | Deliberate practice + log hours |
+| 6:50 | 🕌 **MAGHRIB** | Pray |
+| 7:10 | 📢 **CONTENT** | Build the brand |
+| 8:30 | 🕌 **ISHA** + dinner | Pray + eat |
+| 9:00 | 💰 **ADMIN + INVEST** | Follow-ups, money moves |
+| 9:45 | 📝 **SHUTDOWN** | Plan tomorrow, phone out of room |
+| 10:15 | 😴 **SLEEP** | To wake for Fajr |
 
-**One-line day:** Fajr → outreach → gym → deep work → (Dhuhr) → deep work → (Asr) skill → (Maghrib) content → (Isha) remaining → sleep.
+**Off days:** Friday & Saturday — auto off in the game, streak stays safe.
 
 **Rules (so it never overwhelms):**
 - Miss a block? Don't dwell — attend the next one.
-- Every block has a **minimum**: no time? outreach 10→3, gym→10-min walk, deep work→25 min. Something beats nothing.
-- Weekends: cut Deep Work, add **family / friends** blocks (the game's weekly quests).
-
-Each block maps to a quest in the LIFE RPG app — attending = earning XP.
+- Every block has a **minimum**: no time? outreach 10→3, gym→10-min walk, deep work→25 min.
+- The game shows the current block as **● NOW** (Bangladesh time) — just attend it.
