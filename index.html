@@ -399,6 +399,7 @@ const STATS={
 const TL=[ // masjid waqt + DeepEffect S&M engine. Golden Block (sales) = 6–9 PM BD = 8–11 AM US/UK clients online.
   {id:'fajr',    t:'4:30', m:270, e:'🕌', n:'Fajr namaz',            sub:'wake + pray',              stat:'health',  xp:10, en:5},
   {id:'phone',   t:'4:45', m:285, e:'📖', n:'Quran / phone-free',    sub:'no morning scroll',        stat:'health',  xp:15, en:5},
+  {id:'comm',    t:'5:00', m:300, e:'🗣️', n:'English + Communication',sub:'shadow/speak · sales-call reps', stat:'skills', xp:20, en:-6},
   {id:'gym',     t:'7:00', m:420, e:'💪', n:'Gym',                   sub:'60 min',                   stat:'health',  xp:20, en:8},
   {id:'food',    t:'8:15', m:495, e:'🍳', n:'Breakfast + shower',    sub:'fuel, no junk',            stat:'health',  xp:10, en:10},
   {id:'work1',   t:'9:00', m:540, e:'🎬', n:'Deep Work — client',    sub:'client edits, phone away', stat:'business',xp:25, en:-10},
@@ -652,10 +653,10 @@ function periodDates(p){const out=[];
 function renderProgress(){
   const dates=periodDates(pPeriod);
   let win=0,xp=0,tracked=0,sSum=0,sN=0,rest=0,off=0,shrs=0;
-  const hc={gym:0,sales:0,content:0,skill:0,deep:0,pray:0,prospect:0,convos:0};
+  const hc={gym:0,sales:0,content:0,skill:0,deep:0,pray:0,prospect:0,convos:0,comm:0};
   dates.forEach(ds=>{const h=S.hist[ds]; if(!h)return; tracked++; xp+=h.xp||0; if(h.win)win++; if(h.rest)rest++; if(h.off)off++; shrs+=h.skillHrs||0;
     if(h.smoke!=null){sSum+=h.smoke;sN++;} const q=h.q||{};
-    if(q.gym)hc.gym++; if(q.sales)hc.sales++; if(q.content)hc.content++; if(h.skill||q.skill)hc.skill++; if(q.prospect)hc.prospect++; if(q.convos)hc.convos++;
+    if(q.gym)hc.gym++; if(q.sales)hc.sales++; if(q.content)hc.content++; if(h.skill||q.skill)hc.skill++; if(q.prospect)hc.prospect++; if(q.convos)hc.convos++; if(q.comm)hc.comm++;
     if(q.work1||q.work2)hc.deep++; if(q.fajr&&q.dhuhr&&q.asr&&q.maghrib&&q.isha)hc.pray++;});
   let rev=0; S.deals.forEach(d=>{ if(dates.indexOf(d.date)>=0)rev+=d.amount||0; });
   document.querySelectorAll('.ptab').forEach(b=>b.classList.toggle('on',b.dataset.p===pPeriod));
@@ -664,7 +665,7 @@ function renderProgress(){
     <div class="kpi"><div class="v">$${rev.toLocaleString()}</div><div class="l">Revenue</div></div>`;
   const den=Math.max(1,tracked);
   const rows=[['🔍','Lead days (15/d)',hc.prospect,'#5ca8ff'],['⚔️','Outreach days',hc.sales,'#5ca8ff'],['📢','Content posted',hc.content,'#b98cff'],
-    ['💬','DM/call days',hc.convos,'#34d8c4'],['🎬','Deep work',hc.deep,'#9b6cff'],['🧠','Skill',hc.skill,'#34d8c4'],
+    ['💬','DM/call days',hc.convos,'#34d8c4'],['🗣️','English/Comm',hc.comm,'#34d8c4'],['🎬','Deep work',hc.deep,'#9b6cff'],['🧠','Skill',hc.skill,'#34d8c4'],
     ['💪','Workout',hc.gym,'#4ade80'],['🕌','Full-prayer days',hc.pray,'#ffce6a']];
   $('pHabits').innerHTML=rows.map(([e,n,c,col])=>`<div class="phabit"><span>${e} ${n}</span><div class="bar"><i style="width:${Math.min(100,c/den*100)}%;background:${col}"></i></div><span class="c">${c}d</span></div>`).join('')
     +`<div class="phabit"><span>⏱️ Skill hours</span><span class="c">${shrs.toFixed(1)}h</span></div>`

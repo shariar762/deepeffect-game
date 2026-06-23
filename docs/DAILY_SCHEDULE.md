@@ -12,6 +12,7 @@
 |------|-------|-----------|
 | 4:30 | 🕌 Fajr namaz | Wake + pray |
 | 4:45 | 📖 Quran / phone-free | No morning scroll |
+| 5:00 | 🗣️ **English + Communication** | Shadow/speak aloud · sales-call reps · journal (the #2 client-closing skill) |
 | 7:00 | 💪 Gym | 60 min |
 | 8:15 | 🍳 Breakfast + shower | Refuel |
 | 9:00 | 🎬 **Deep Work — client** | Client edits (active clients), phone away |
