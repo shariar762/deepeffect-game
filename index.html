@@ -36,6 +36,18 @@
     border-radius:30px;padding:8px 14px;font-weight:800;font-size:1.05rem;backdrop-filter:blur(10px)}
   .streak small{font-weight:600;color:var(--muted);font-size:.62rem;display:block;line-height:1}
 
+  .herostats{display:flex;gap:10px;margin-bottom:13px}
+  .hbox{flex:1;border:1px solid var(--line);border-radius:16px;padding:14px 10px;text-align:center;backdrop-filter:blur(12px);background:var(--glass)}
+  .hbox.hb-day{background:linear-gradient(135deg,rgba(255,206,106,.15),var(--glass));border-color:rgba(255,206,106,.32)}
+  .hbox.hb-streak{background:linear-gradient(135deg,rgba(255,138,61,.15),var(--glass));border-color:rgba(255,138,61,.32)}
+  .hbox .big{font-size:2.2rem;font-weight:900;line-height:1;letter-spacing:-1px}
+  .hbox.hb-day .big{color:var(--gold)}
+  .hbox.hb-streak .big{color:var(--flame)}
+  .hbox .lbl{font-size:.62rem;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.7px;margin-top:7px}
+  .backup-nudge{display:flex;align-items:center;gap:9px;justify-content:center;background:rgba(92,168,255,.12);
+    border:1px solid rgba(92,168,255,.35);border-radius:12px;padding:9px 12px;margin-bottom:13px;font-size:.76rem;font-weight:600;color:#cfe0ff}
+  .backup-nudge button{background:var(--blue);color:#021022;border:none;border-radius:8px;padding:6px 12px;font-weight:800;font-size:.72rem;cursor:pointer;font-family:inherit}
+  .backup-nudge button:active{transform:scale(.95)}
   .card{background:var(--glass);border:1px solid var(--line);border-radius:var(--r);
     backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:var(--shadow)}
   .pad{padding:15px}
@@ -246,8 +258,14 @@
 <div class="wrap">
   <div class="top">
     <div class="brand">LIFE RPG<span>Shariar · 🥚 Rookie → 👑 $5M Boss</span></div>
-    <div class="streak"><span id="streakNum">0</span>🔥<small>streak</small></div>
   </div>
+
+  <div class="herostats">
+    <div class="hbox hb-day"><div class="big" id="dayBig">1</div><div class="lbl" id="dayLbl">Day</div></div>
+    <div class="hbox hb-streak"><div class="big" id="streakBig">0🔥</div><div class="lbl" id="streakLbl">Streak</div></div>
+  </div>
+
+  <div class="backup-nudge" id="backupNudge" style="display:none">💾 <span id="nudgeText"></span> <button id="nudgeBtn">Backup now</button></div>
 
   <!-- QUOTE -->
   <div class="card quote"><div class="lbl">💬 Daily Fuel</div><p id="quote"></p></div>
@@ -473,6 +491,8 @@ function wkid(){const d=bdToday(),o=new Date(d.getFullYear(),0,1);return d.getFu
 function dayIdx(){const d=bdToday();return Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);}
 const WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function fmtDate(ds){const [y,m,d]=ds.split('-').map(Number),dt=new Date(y,m-1,d);return WD[dt.getDay()]+', '+d+' '+MO[m-1]+' '+y;}
+function fmtShort(ds){const [y,m,d]=ds.split('-').map(Number),dt=new Date(y,m-1,d);return WD[dt.getDay()]+' '+d+' '+MO[m-1];}
+function daysBetween(ds){const [y,m,d]=ds.split('-').map(Number);return Math.floor((bdToday()-new Date(y,m-1,d))/864e5);}
 function freshDay(date){return {date,q:{},skill:null,skillHrs:0,smoke:0,done:false,rest:false};}
 function weekdayOf(ds){const [y,m,d]=ds.split('-').map(Number);return new Date(y,m-1,d).getDay();}
 const isOffDate=ds=>{const w=weekdayOf(ds);return w===5||w===6;};            // Fri(5) & Sat(6) = weekend off
@@ -489,6 +509,7 @@ function load(){
     deals:[],revByMonth:{},notes:{},hist:{},today:freshDay(dstr()),week:{id:wkid(),done:{}}};
   if(!s.deals)s.deals=[]; if(!s.revByMonth)s.revByMonth={}; if(!s.notes)s.notes={};   // migrate older saves
   if(!s.startDate)s.startDate=dstr();
+  if(s.lastBackup===undefined)s.lastBackup=null;
   if(s.today&&s.today.rest===undefined)s.today.rest=false;
   if(s.today&&s.today.skillHrs===undefined)s.today.skillHrs=0;
   return s;
@@ -542,8 +563,14 @@ function render(){
   const t=S.today, base=dayXP(t), m=mult(S.combo), L=LEVELS[S.lvl];
 
   $('quote').textContent='“'+QUOTES[dayIdx()%QUOTES.length]+'”';
-  $('streakNum').textContent=S.combo;
-  $('rankEmo').textContent=L.e; $('rankName').textContent=L.n; $('rankLvl').textContent='Level '+(S.lvl+1)+' · Day '+dayNum();
+  $('dayBig').textContent=dayNum(); $('dayLbl').textContent='Day · '+fmtShort(dstr());
+  $('streakBig').textContent=S.combo+'🔥'; $('streakLbl').textContent='Streak · best '+S.best;
+  $('rankEmo').textContent=L.e; $('rankName').textContent=L.n; $('rankLvl').textContent='Level '+(S.lvl+1);
+  // backup nudge: never backed up & a week in, OR 7+ days since last backup
+  const nb=$('backupNudge'), lb=S.lastBackup, since=lb?daysBetween(lb):null;
+  if((lb&&since>=7)||(!lb&&dayNum()>=7)){nb.style.display='flex';
+    $('nudgeText').textContent=lb?(since+' days since last backup — protect your data'):'A week in — back up your progress';}
+  else nb.style.display='none';
   $('todayXP').textContent=base; $('mult').textContent='x'+m;
   const pct=Math.min(1,base/WIN_XP);
   $('xpFill').style.width=pct*100+'%';
@@ -744,7 +771,9 @@ $('addDeal').onclick=()=>{
 // Backup / Restore
 function download(name,text){const b=new Blob([text],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');
   a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);}
-$('exportBtn').onclick=()=>{download('life_rpg_backup_'+dstr()+'.json',JSON.stringify(S));toast('💾 Backup file downloaded');};
+function doBackup(){download('life_rpg_backup_'+dstr()+'.json',JSON.stringify(S)); S.lastBackup=dstr(); save(); render(); toast('💾 Backup downloaded · saved');}
+$('exportBtn').onclick=doBackup;
+$('nudgeBtn').onclick=doBackup;
 $('importBtn').onclick=()=>$('importFile').click();
 $('importFile').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();
   r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||typeof d!=='object')throw 0;
