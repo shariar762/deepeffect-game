@@ -396,23 +396,25 @@ const STATS={
   wealth:{e:'💰',n:'Wealth',c:'#ffce6a'},     life:{e:'❤️',n:'Life',c:'#ff7ab8'},
 };
 // the timeline IS the daily checklist. m=minutes from midnight, en=energy delta
-const TL=[ // scheduled around Shariar's masjid prayer times (Fajr 4:30, Dhuhr 1:15, Asr 5:00, Maghrib 6:50, Isha 8:30)
-  {id:'fajr',    t:'4:30', m:270, e:'🕌', n:'Fajr namaz',           sub:'wake + pray',         stat:'health',  xp:10, en:5},
-  {id:'phone',   t:'4:45', m:285, e:'📖', n:'Quran / phone-free',   sub:'no morning scroll',   stat:'health',  xp:15, en:5},
-  {id:'sales',   t:'5:30', m:330, e:'⚔️', n:'Outreach — 10 msgs',   sub:'#1 money task',       stat:'business',xp:30, en:-12},
-  {id:'gym',     t:'7:00', m:420, e:'💪', n:'Gym',                  sub:'60 min',              stat:'health',  xp:20, en:8},
-  {id:'food',    t:'8:15', m:495, e:'🍳', n:'Breakfast + shower',   sub:'fuel, no junk',       stat:'health',  xp:10, en:10},
-  {id:'work1',   t:'9:00', m:540, e:'🎬', n:'Deep Work 1',          sub:'client / studio',     stat:'business',xp:20, en:-10},
-  {id:'dhuhr',   t:'1:15', m:795, e:'🕌', n:'Dhuhr + lunch + nap',  sub:'recharge',            stat:'health',  xp:10, en:12},
-  {id:'work2',   t:'2:15', m:855, e:'🎬', n:'Deep Work 2',          sub:'client / portfolio',  stat:'business',xp:20, en:-10},
-  {id:'asr',     t:'5:00', m:1020,e:'🕌', n:'Asr namaz',            sub:'pray',                stat:'health',  xp:10, en:5},
-  {id:'skill',   t:'5:15', m:1035,e:'🧠', n:'Skill practice',       sub:'pick below',          stat:'skills',  xp:25, en:-8},
-  {id:'maghrib', t:'6:50', m:1130,e:'🕌', n:'Maghrib namaz',        sub:'pray',                stat:'health',  xp:10, en:5},
-  {id:'content', t:'7:10', m:1150,e:'📢', n:'Content creation',     sub:'build the brand',     stat:'brand',   xp:25, en:-10},
-  {id:'isha',    t:'8:30', m:1230,e:'🕌', n:'Isha + dinner',        sub:'pray + eat',          stat:'health',  xp:10, en:10},
-  {id:'invest',  t:'9:00', m:1260,e:'💰', n:'Admin + invest 15m',   sub:'money moves',         stat:'wealth',  xp:15, en:-6},
-  {id:'shutdown',t:'9:45', m:1305,e:'📝', n:'Shutdown + plan',      sub:'plan tomorrow',       stat:'health',  xp:10, en:3},
-  {id:'sleep',   t:'10:15',m:1335,e:'😴', n:'Sleep',               sub:'protect tomorrow',    stat:'health',  xp:20, en:15},
+const TL=[ // masjid waqt + DeepEffect S&M engine. Golden Block (sales) = 6–9 PM BD = 8–11 AM US/UK clients online.
+  {id:'fajr',    t:'4:30', m:270, e:'🕌', n:'Fajr namaz',            sub:'wake + pray',              stat:'health',  xp:10, en:5},
+  {id:'phone',   t:'4:45', m:285, e:'📖', n:'Quran / phone-free',    sub:'no morning scroll',        stat:'health',  xp:15, en:5},
+  {id:'gym',     t:'7:00', m:420, e:'💪', n:'Gym',                   sub:'60 min',                   stat:'health',  xp:20, en:8},
+  {id:'food',    t:'8:15', m:495, e:'🍳', n:'Breakfast + shower',    sub:'fuel, no junk',            stat:'health',  xp:10, en:10},
+  {id:'work1',   t:'9:00', m:540, e:'🎬', n:'Deep Work — client',    sub:'client edits, phone away', stat:'business',xp:25, en:-10},
+  {id:'dhuhr',   t:'1:15', m:795, e:'🕌', n:'Dhuhr + lunch + nap',   sub:'recharge',                 stat:'health',  xp:10, en:12},
+  {id:'work2',   t:'2:15', m:855, e:'🎨', n:'Content batch + samples',sub:'film/edit · Wed=teardowns',stat:'brand',   xp:20, en:-10},
+  {id:'asr',     t:'5:00', m:1020,e:'🕌', n:'Asr namaz',             sub:'pray',                     stat:'health',  xp:10, en:5},
+  {id:'skill',   t:'5:15', m:1035,e:'🧠', n:'Skill practice',        sub:'pick below + log hrs',     stat:'skills',  xp:25, en:-8},
+  {id:'content', t:'6:00', m:1080,e:'📢', n:'Post + engage',         sub:'publish + comment 10 ICP', stat:'brand',   xp:25, en:-8},
+  {id:'prospect',t:'6:30', m:1110,e:'🔍', n:'Prospect — 15 leads',   sub:'add leads + 1 signal each',stat:'business',xp:25, en:-8},
+  {id:'maghrib', t:'6:50', m:1130,e:'🕌', n:'Maghrib namaz',         sub:'pray',                     stat:'health',  xp:10, en:5},
+  {id:'sales',   t:'7:05', m:1145,e:'⚔️', n:'Outreach — 15–20',      sub:'DMs + emails + follow-ups',stat:'business',xp:30, en:-12},
+  {id:'convos',  t:'8:15', m:1215,e:'💬', n:'Reply DMs + calls',     sub:'discovery calls land here',stat:'business',xp:15, en:-8},
+  {id:'isha',    t:'8:30', m:1230,e:'🕌', n:'Isha + dinner',         sub:'pray + eat',               stat:'health',  xp:10, en:10},
+  {id:'log',     t:'8:45', m:1245,e:'📊', n:'Log the tracker',       sub:'Daily 3 done? + money',    stat:'wealth',  xp:15, en:3},
+  {id:'shutdown',t:'9:45', m:1305,e:'📝', n:'Shutdown + plan',       sub:'plan tomorrow',            stat:'health',  xp:10, en:3},
+  {id:'sleep',   t:'10:15',m:1335,e:'😴', n:'Sleep',                sub:'protect tomorrow',         stat:'health',  xp:20, en:15},
 ];
 const SKILLS=[
   {id:'motion',e:'🎞️',n:'Motion'},{id:'editing',e:'✂️',n:'Editing'},{id:'content',e:'🎥',n:'Content'},
@@ -650,10 +652,10 @@ function periodDates(p){const out=[];
 function renderProgress(){
   const dates=periodDates(pPeriod);
   let win=0,xp=0,tracked=0,sSum=0,sN=0,rest=0,off=0,shrs=0;
-  const hc={gym:0,sales:0,content:0,skill:0,deep:0,pray:0};
+  const hc={gym:0,sales:0,content:0,skill:0,deep:0,pray:0,prospect:0,convos:0};
   dates.forEach(ds=>{const h=S.hist[ds]; if(!h)return; tracked++; xp+=h.xp||0; if(h.win)win++; if(h.rest)rest++; if(h.off)off++; shrs+=h.skillHrs||0;
     if(h.smoke!=null){sSum+=h.smoke;sN++;} const q=h.q||{};
-    if(q.gym)hc.gym++; if(q.sales)hc.sales++; if(q.content)hc.content++; if(h.skill||q.skill)hc.skill++;
+    if(q.gym)hc.gym++; if(q.sales)hc.sales++; if(q.content)hc.content++; if(h.skill||q.skill)hc.skill++; if(q.prospect)hc.prospect++; if(q.convos)hc.convos++;
     if(q.work1||q.work2)hc.deep++; if(q.fajr&&q.dhuhr&&q.asr&&q.maghrib&&q.isha)hc.pray++;});
   let rev=0; S.deals.forEach(d=>{ if(dates.indexOf(d.date)>=0)rev+=d.amount||0; });
   document.querySelectorAll('.ptab').forEach(b=>b.classList.toggle('on',b.dataset.p===pPeriod));
@@ -661,8 +663,9 @@ function renderProgress(){
     <div class="kpi"><div class="v">${xp.toLocaleString()}</div><div class="l">XP earned</div></div>
     <div class="kpi"><div class="v">$${rev.toLocaleString()}</div><div class="l">Revenue</div></div>`;
   const den=Math.max(1,tracked);
-  const rows=[['💪','Workout',hc.gym,'#4ade80'],['⚔️','Outreach',hc.sales,'#5ca8ff'],['📢','Content',hc.content,'#b98cff'],
-    ['🧠','Skill',hc.skill,'#34d8c4'],['🎬','Deep work',hc.deep,'#5ca8ff'],['🕌','Full-prayer days',hc.pray,'#ffce6a']];
+  const rows=[['🔍','Lead days (15/d)',hc.prospect,'#5ca8ff'],['⚔️','Outreach days',hc.sales,'#5ca8ff'],['📢','Content posted',hc.content,'#b98cff'],
+    ['💬','DM/call days',hc.convos,'#34d8c4'],['🎬','Deep work',hc.deep,'#9b6cff'],['🧠','Skill',hc.skill,'#34d8c4'],
+    ['💪','Workout',hc.gym,'#4ade80'],['🕌','Full-prayer days',hc.pray,'#ffce6a']];
   $('pHabits').innerHTML=rows.map(([e,n,c,col])=>`<div class="phabit"><span>${e} ${n}</span><div class="bar"><i style="width:${Math.min(100,c/den*100)}%;background:${col}"></i></div><span class="c">${c}d</span></div>`).join('')
     +`<div class="phabit"><span>⏱️ Skill hours</span><span class="c">${shrs.toFixed(1)}h</span></div>`
     +`<div class="phabit"><span>🚬 Avg cigarettes/day</span><span class="c">${sN?(sSum/sN).toFixed(1):'—'}</span></div>`
